@@ -62,7 +62,7 @@ func (c *Client) MakeHTTPRequest(url string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("http request failed: %w", err)
 	}
-	//defer resp.Body.Close()
+	//defer resp.Body.Close() // not sure what this does
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -156,4 +156,8 @@ func (RSI *IndicatorRSI) ByDate(date time.Time) *TechnicalRSIAnalysis {
 		return nil
 	}
 	return &item
+}
+
+func GetRSI() []float32 {
+	return []float32{0}
 }

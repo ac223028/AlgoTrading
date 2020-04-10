@@ -3,6 +3,7 @@ package main
 import (
 	"../alphaVantage"
 	"fmt"
+	"github.com/alpacahq/alpaca-trade-api-go/alpaca"
 )
 
 func main() {
@@ -48,4 +49,6 @@ func main() {
 	for key, value := range _map {
 		fmt.Println(key, value)
 	}
+	x := alpaca.APIError{}
+	print(x)
 }
