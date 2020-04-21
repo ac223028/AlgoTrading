@@ -1,33 +1,41 @@
 package trendFollowing
 
 import (
-	"time"
+	"encoding/json"
+	"fmt"
 )
 
-type trade struct {
-	ticker string
-	price  float32
-	date   time.Time
+func PrettyPrint(v interface{}) (err error) {
+	b, err := json.MarshalIndent(v, "", "  ")
+	if err == nil {
+		fmt.Println(string(b))
+	}
+	return
 }
 
-func getTrade(rsi float32, rsiArray []float32) trade { // need to incorporate time as an input
-	ema := EMA(rsiArray, 10) // this N does not have to be 10
-	result := trade(nil)     // this makes sense for some reason
+type Trade struct {
+	action string
+	side   string
+}
+
+func GetTrade(rsi float32, rsiArray []float32, openPosition bool) Trade { // need to incorporate time as an input
+	ema := EMA(rsiArray, 100) // this N does not have to be 10
+	result := Trade{"nil", "nil"}
 
 	if ema < 40 || ema > 60 {
-		if rsi > ema {
-			// if no position is open
-			//     open a long position
-			// else if a short position is open
-			//     close the short position
-			return result
+		if rsi > ema { // also need to figure out how much to buy
+			if openPosition {
+				return Trade{"buy", "long"} // open long position
+			} else {
+				return Trade{"sell", "short"} //     close the short position
+			}
 		}
 		if rsi < ema {
-			// if no position is open
-			//     open a short position
-			// else if long position is open
-			//     close the long position
-			return result
+			if !openPosition {
+				return Trade{"buy", "short"} // open a short position
+			} else {
+				return Trade{"sell", "long"} // close the long position
+			}
 		}
 	}
 	return result
@@ -65,4 +73,8 @@ func EMA(data []float32, N int, kOptional ...float32) float32 { // may want to l
 	//result := (data[0] - y * k) + y // based on the research paper (way off...)
 	//result := data[0] * k + y * (1-k) // based on investopedia (almost the same as excel)
 	return result
+}
+
+func GetTipSheet() int {
+	return 0
 }

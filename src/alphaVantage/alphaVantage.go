@@ -10,8 +10,16 @@ import (
 	"time"
 )
 
+func PrettyPrint(v interface{}) (err error) {
+	b, err := json.MarshalIndent(v, "", "  ")
+	if err == nil {
+		fmt.Println(string(b))
+	}
+	return
+}
+
 const baseURL = "https://www.alphavantage.co"
-const httpDelayPerRequest = time.Second * 15 // may have to do something about this
+const httpDelayPerRequest = time.Second * 10 // may have to do something about this
 
 // Client represents a new alphavantage client
 type Client struct {
@@ -56,13 +64,13 @@ func (c *Client) MakeHTTPRequest(url string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("building http request failed: %w", err)
 	}
-	//req.Header.Set("User-Agent", "Go client: Anon")
+	req.Header.Set("User-Agent", "Go client: Anon")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("http request failed: %w", err)
 	}
-	//defer resp.Body.Close() // not sure what this does
+	defer resp.Body.Close() // not sure what this does
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -112,7 +120,7 @@ func toIndicatorRSI(buf []byte) (*IndicatorRSI, error) {
 // IndicatorRSI fetches the "RSI" indicators for given symbol from API.
 // The order of dates in TechnicalAnalysis is random because it's a map.
 func (c *Client) IndicatorRSI(symbol string, interval string, timePeriod string, seriesType string) (*IndicatorRSI, error) { // come back to make them enums?
-	// the daily is Wilder's RSI
+	// the daily RSI 14 close is Alpaca's Wilder's 1 year RSI 14
 
 	url := fmt.Sprintf("%s/query?function=%s&symbol=%s&interval=%s&time_period=%s&series_type=%s&apikey=%s",
 		baseURL, "RSI", symbol, interval, timePeriod, seriesType, c.apiKey)
@@ -129,7 +137,7 @@ func (c *Client) IndicatorRSI(symbol string, interval string, timePeriod string,
 }
 
 // Latest returns the most recent TechnicalRSIAnalysis for given RSI.
-func (RSI *IndicatorRSI) Latest() (date string, latest *TechnicalRSIAnalysis) {
+func (RSI *IndicatorRSI) Latest() (date string, latest *TechnicalRSIAnalysis) { // this should work regardless of time
 	dates := make([]string, len(RSI.TechnicalAnalysis))
 	for date := range RSI.TechnicalAnalysis {
 		dates = append(dates, date)
@@ -157,7 +165,17 @@ func (RSI *IndicatorRSI) ByDate(date time.Time) *TechnicalRSIAnalysis {
 	}
 	return &item
 }
+func (RSI *IndicatorRSI) ByMinute(date time.Time) *TechnicalRSIAnalysis {
+	day := date.Format("2006-01-02 15:04") // this string needs to be changed
+	//print(day, "\n")
+	item, exists := RSI.TechnicalAnalysis[day]
+	if !exists {
+		return nil
+	}
+	return &item
+}
 
-func GetRSI() []float32 {
-	return []float32{0}
+func (c *Client) GetRSI(symbol string) []float32 { // this is daily avg?
+
+	return []float32{}
 }
