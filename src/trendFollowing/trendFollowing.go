@@ -14,31 +14,31 @@ func PrettyPrint(v interface{}) (err error) {
 }
 
 type Trade struct {
-	action string
-	side   string
+	Action string
+	Side   string
 }
 
-func GetTrade(rsi float32, rsiArray []float32, openPosition bool) Trade { // need to incorporate time as an input
-	ema := EMA(rsiArray, 100) // this N does not have to be 10
-	result := Trade{"nil", "nil"}
+func GetTrade(rsi float32, rsiArray []float32, openPosition bool) (Trade, float32) { // need to incorporate time as an input
+	ema := EMA(rsiArray, 10) // this N does not have to be 10
+	result := Trade{"", ""}
 
 	if ema < 40 || ema > 60 {
 		if rsi > ema { // also need to figure out how much to buy
 			if openPosition {
-				return Trade{"buy", "long"} // open long position
+				return Trade{"buy", "long"}, ema // open long position
 			} else {
-				return Trade{"sell", "short"} //     close the short position
+				return Trade{"sell", "short"}, ema //     close the short position
 			}
 		}
 		if rsi < ema {
 			if !openPosition {
-				return Trade{"buy", "short"} // open a short position
+				return Trade{"buy", "short"}, ema // open a short position
 			} else {
-				return Trade{"sell", "long"} // close the long position
+				return Trade{"sell", "long"}, ema // close the long position
 			}
 		}
 	}
-	return result
+	return result, ema
 }
 
 func SMA(data []float32) float32 {

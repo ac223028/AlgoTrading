@@ -175,7 +175,39 @@ func (RSI *IndicatorRSI) ByMinute(date time.Time) *TechnicalRSIAnalysis {
 	return &item
 }
 
-func (c *Client) GetRSI(symbol string) []float32 { // this is daily avg?
+func (RSI *IndicatorRSI) GetRSI() (float32, []float32) { // this is daily avg?
 
-	return []float32{}
+	var latest float32
+	var array []float32
+
+	var dates []string
+	for date := range RSI.TechnicalAnalysis {
+		dates = append(dates, date)
+	}
+	sort.Strings(dates)
+	date := dates[len(dates)-1]
+	latestVal, _ := RSI.TechnicalAnalysis[date]
+	latest = float32(latestVal.RSI)
+
+	//for i := range dates {
+	//	print(i, " ", dates[i], "\n")
+	//}
+
+	for i := range dates {
+		r := RSI.TechnicalAnalysis[dates[i]].RSI
+		//print(i, " ", dates[i], " ", r, "\n")
+		array = append(array, float32(r))
+	}
+
+	//for i := range array {
+	//	print(i, " ", array[i], "\n")
+	//}
+
+	//print(latest, " ")
+	//for i := range array {
+	//	print(array[i], " ")
+	//}
+
+	return latest, array
+
 }

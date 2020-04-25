@@ -2,9 +2,12 @@ package main
 
 import (
 	"../alphaVantage"
+	"../trendFollowing"
 	"encoding/json"
 	"fmt"
 	"github.com/alpacahq/alpaca-trade-api-go/alpaca"
+	"os"
+	"sort"
 )
 
 func PrettyPrint(v interface{}) (err error) {
@@ -20,7 +23,7 @@ type TipSheet struct {
 	sell []string
 }
 
-func makeTipSheet(alpacaAPI *alpaca.Client, avAPI *alphaVantage.Client) TipSheet {
+func makeTipSheet(alpacaAPI *alpaca.Client, avAPI *alphaVantage.Client) []alpaca.Asset {
 	status := "active"
 	assets, err := alpacaAPI.ListAssets(&status)
 	if err != nil {
@@ -28,7 +31,7 @@ func makeTipSheet(alpacaAPI *alpaca.Client, avAPI *alphaVantage.Client) TipSheet
 	}
 	print(len(assets))
 
-	var result TipSheet
+	//var result TipSheet
 
 	//tips := make([]alpaca.Asset, 0)
 
@@ -49,35 +52,70 @@ func makeTipSheet(alpacaAPI *alpaca.Client, avAPI *alphaVantage.Client) TipSheet
 	//	fmt.Printf("%s %s %f %d\n", symbol, date, latest.RSI, len(indicator.TechnicalAnalysis))
 	//}
 
-	return result
+	return assets
 }
 
 func test(alpacaAPI *alpaca.Client, avAPI *alphaVantage.Client) {
+	ind, err := avAPI.IndicatorRSI("NFLX", "60min", "14", "close")
 
+	if err != nil {
+		panic(err)
+	}
+
+	m := ind.TechnicalAnalysis
+
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		print(k, " ", m[k].RSI, "\n")
+	}
+
+	//PrettyPrint(ind)
 }
 
 func main() {
 
-	ALP_client := Alpaca("PKXAF267QI7IJV5EUW3L", "p2dCv7ZWkykxY2L7Q3mK6EpLemlAiE5zPxxRd4PR")
-	AV_client := alphaVantage.New("MHL1PVXKA24TUHYG")
+	// free API key: PKXAF267QI7IJV5EUW3L, p2dCv7ZWkykxY2L7Q3mK6EpLemlAiE5zPxxRd4PR
+	// prem API key: B5NM7SCV8LFLME8Y
+	AlpClient := Alpaca("PKXAF267QI7IJV5EUW3L", "p2dCv7ZWkykxY2L7Q3mK6EpLemlAiE5zPxxRd4PR")
+	AvClient := alphaVantage.New("MHL1PVXKA24TUHYG")
 
-	test(ALP_client, AV_client)
+	//test(AlpClient, AvClient)
 
-	//makeTipSheet(ALP_client, AV_client)
+	file, _ := os.Create("stocks.txt")
 
-	//indicator, _ := c.IndicatorRSI("NYMT", "daily", "14", "open")
-	//indicator, _ := c.IndicatorRSI("NYMT", "5min", "21", "open")
-	//day, _ := c.IndicatorRSI("NYMT", "daily", "21", "open")
-	//week, err := c.IndicatorRSI("MSFT", "weekly", "21", "open")
+	status := "active"
+	assets, err := AlpClient.ListAssets(&status)
+	if err != nil {
+		panic(err)
+	}
 
-	//tipSheet := trendFollowing.GetTipSheet()
-	//
-	//for tip := range tipSheet {
-	//	trade := trendFollowing.GetTrade(tip)
-	//	if trade != nil {
-	//		rsiArray := alphaVantage.GetRSI(tip.ticker)
-	//		rsi :=
-	//		api.PlaceOrder(rsiArray)
-	//	}
-	//}
+	for i := range assets {
+		a := assets[i]
+		ind, err := AvClient.IndicatorRSI(a.Symbol, "60min", "14", "close")
+		if err != nil {
+			print(err)
+			continue
+		}
+
+		latest, array := ind.GetRSI()
+		tip, ema := trendFollowing.GetTrade(latest, array, false)
+		s := fmt.Sprintf("%f", latest)
+		e := fmt.Sprintf("%f", ema)
+
+		if tip.Action == "buy" {
+			file.WriteString(a.Symbol + " " + s + " " + e + "\n")
+
+		}
+		fmt.Println(a.Symbol + " " + s + " " + e)
+	}
+
+	e := file.Close()
+	if e != nil {
+		panic(e)
+	}
 }
