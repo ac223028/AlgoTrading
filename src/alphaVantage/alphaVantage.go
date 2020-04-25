@@ -10,16 +10,16 @@ import (
 	"time"
 )
 
-func PrettyPrint(v interface{}) (err error) {
-	b, err := json.MarshalIndent(v, "", "  ")
-	if err == nil {
-		fmt.Println(string(b))
-	}
-	return
-}
+//func PrettyPrint(v interface{}) (err error) {
+//	b, err := json.MarshalIndent(v, "", "  ")
+//	if err == nil {
+//		fmt.Println(string(b))
+//	}
+//	return
+//}
 
 const baseURL = "https://www.alphavantage.co"
-const httpDelayPerRequest = time.Second * 10 // may have to do something about this
+const httpDelayPerRequest = time.Second * 2 // may have to do something about this
 
 // Client represents a new alphavantage client
 type Client struct {

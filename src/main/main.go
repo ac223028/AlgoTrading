@@ -8,6 +8,7 @@ import (
 	"github.com/alpacahq/alpaca-trade-api-go/alpaca"
 	"os"
 	"sort"
+	"strconv"
 )
 
 func PrettyPrint(v interface{}) (err error) {
@@ -79,14 +80,16 @@ func test(alpacaAPI *alpaca.Client, avAPI *alphaVantage.Client) {
 
 func main() {
 
-	// free API key: PKXAF267QI7IJV5EUW3L, p2dCv7ZWkykxY2L7Q3mK6EpLemlAiE5zPxxRd4PR
+	// free API key: MHL1PVXKA24TUHYG
 	// prem API key: B5NM7SCV8LFLME8Y
 	AlpClient := Alpaca("PKXAF267QI7IJV5EUW3L", "p2dCv7ZWkykxY2L7Q3mK6EpLemlAiE5zPxxRd4PR")
-	AvClient := alphaVantage.New("MHL1PVXKA24TUHYG")
+	AvClient := alphaVantage.New("B5NM7SCV8LFLME8Y")
 
 	//test(AlpClient, AvClient)
 
 	file, _ := os.Create("stocks.txt")
+
+	temp, _ := os.Create("assets.txt")
 
 	status := "active"
 	assets, err := AlpClient.ListAssets(&status)
@@ -94,11 +97,23 @@ func main() {
 		panic(err)
 	}
 
-	for i := range assets {
+	for asset := range assets {
+		temp.WriteString(assets[asset].Symbol + "\n")
+	}
+	temp.Close()
+
+	for i := 0; i < len(assets); i++ {
 		a := assets[i]
 		ind, err := AvClient.IndicatorRSI(a.Symbol, "60min", "14", "close")
-		if err != nil {
-			print(err)
+		if err != nil { // write error to file
+			print(err.Error(), "\n")
+			continue
+		}
+
+		// check for over flow / running out of calls
+		print(len(ind.TechnicalAnalysis), " ")
+		if len(ind.TechnicalAnalysis) < 1 { // dashes are not friendly
+			PrettyPrint(ind.TechnicalAnalysis)
 			continue
 		}
 
@@ -111,7 +126,7 @@ func main() {
 			file.WriteString(a.Symbol + " " + s + " " + e + "\n")
 
 		}
-		fmt.Println(a.Symbol + " " + s + " " + e)
+		fmt.Println(a.Symbol + " " + s + " " + e + " " + strconv.Itoa(i))
 	}
 
 	e := file.Close()
