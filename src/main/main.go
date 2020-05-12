@@ -140,6 +140,34 @@ func test(alpacaAPI *alpaca.Client, avAPI *alphaVantage.Client) {
 		a := strings.Split(args[i], " ")
 		fmt.Fprintln(w, fmt.Sprintf("%f", rsi.RSI)+"\t"+a[0]+"\t"+a[1]+"\t"+date)
 	}
+
+	T := []string{
+		"1min",
+		"30min",
+		"60min",
+		"daily",
+		"weekly",
+		"monthly",
+	}
+
+	P := []string{
+		" high",
+		" low",
+		" close",
+	}
+
+	for _, t := range T {
+		total := 0.0
+		for _, p := range P {
+			param := t + p
+			_, rsi := inds[param].Latest()
+			total += rsi.RSI
+		}
+		total /= 3
+
+		fmt.Fprintln(w, fmt.Sprintf("%f", total)+"\t"+"hlc3"+"\t"+t)
+	}
+
 	w.Flush()
 }
 
@@ -150,60 +178,62 @@ func main() {
 	AlpClient := Alpaca("PKXAF267QI7IJV5EUW3L", "p2dCv7ZWkykxY2L7Q3mK6EpLemlAiE5zPxxRd4PR")
 	AvClient := alphaVantage.New("B5NM7SCV8LFLME8Y")
 
-	testing := false
+	testing := true
 
 	if testing {
+		print("testing\n")
 		test(AlpClient, AvClient)
-	} else {
-		fileName := time.Now().Format("02-Jan-2006")
+		return
+	}
 
-		file, _ := os.Create(fileName + ".txt")
+	fileName := time.Now().Format("02-Jan-2006")
 
-		temp, _ := os.Create("assets.txt")
+	file, _ := os.Create(fileName + ".txt")
 
-		status := "active"
-		assets, err := AlpClient.ListAssets(&status)
-		if err != nil {
-			panic(err)
+	temp, _ := os.Create("assets.txt")
+
+	status := "active"
+	assets, err := AlpClient.ListAssets(&status)
+	if err != nil {
+		panic(err)
+	}
+
+	for asset := range assets {
+		temp.WriteString(assets[asset].Symbol + "\n")
+	}
+	temp.Close()
+
+	for i := 0; i < len(assets); i++ {
+		a := assets[i]
+		ind, err := AvClient.IndicatorRSI(a.Symbol, "weekly", "14", "close")
+		if err != nil { // write error to file
+			print(err.Error(), "\n")
+			continue
 		}
 
-		for asset := range assets {
-			temp.WriteString(assets[asset].Symbol + "\n")
-		}
-		temp.Close()
-
-		for i := 0; i < len(assets); i++ {
-			a := assets[i]
-			ind, err := AvClient.IndicatorRSI(a.Symbol, "weekly", "14", "close")
-			if err != nil { // write error to file
-				print(err.Error(), "\n")
-				continue
-			}
-
-			// check for over flow / running out of calls
-			print(len(ind.TechnicalAnalysis), " ")
-			if len(ind.TechnicalAnalysis) < 1 { // dashes are not friendly
-				PrettyPrint(ind.TechnicalAnalysis)
-				continue
-			}
-
-			latest, array := ind.GetRSI()
-			tip, ema := trendFollowing.GetTrade(latest, array, false)
-			s := fmt.Sprintf("%f", latest)
-			e := fmt.Sprintf("%f", ema)
-
-			if tip.Action == "buy" && tip.Side == "long" {
-				file.WriteString(a.Symbol + " " + s + " " + e + "\n")
-				fmt.Println(a.Symbol + " " + s + " " + e + " " + strconv.Itoa(i))
-			} else {
-				fmt.Println(a.Symbol)
-			}
+		// check for over flow / running out of calls
+		print(len(ind.TechnicalAnalysis), " ")
+		if len(ind.TechnicalAnalysis) < 1 { // dashes are not friendly
+			PrettyPrint(ind.TechnicalAnalysis)
+			continue
 		}
 
-		e := file.Close()
-		if e != nil {
-			panic(e)
+		latest, array := ind.GetRSI()
+		tip, ema := trendFollowing.GetTrade(latest, array, false)
+		s := fmt.Sprintf("%f", latest)
+		e := fmt.Sprintf("%f", ema)
+
+		if tip.Action == "buy" && tip.Side == "long" {
+			file.WriteString(a.Symbol + " " + s + " " + e + "\n")
+			fmt.Println(a.Symbol + " " + s + " " + e + " " + strconv.Itoa(i))
+		} else {
+			fmt.Println(a.Symbol)
 		}
+	}
+
+	e := file.Close()
+	if e != nil {
+		panic(e)
 	}
 
 }
