@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"github.com/alpacahq/alpaca-trade-api-go/alpaca"
 	"os"
-	"sort"
 	"strconv"
+	"strings"
+	"text/tabwriter"
+	"time"
 )
 
 func PrettyPrint(v interface{}) (err error) {
@@ -57,25 +59,88 @@ func makeTipSheet(alpacaAPI *alpaca.Client, avAPI *alphaVantage.Client) []alpaca
 }
 
 func test(alpacaAPI *alpaca.Client, avAPI *alphaVantage.Client) {
-	ind, err := avAPI.IndicatorRSI("NFLX", "60min", "14", "close")
+	symbol := "F"
+	args := []string{
+		//"1min open",
+		//"1min close",
+		//"1min low",
+		//"1min high",
+		//
+		//"30min open",
+		//"30min close",
+		//"30min low",
+		//"30min high",
+		//
+		//"60min open",
+		//"60min close",
+		//"60min low",
+		//"60min high",
+		//
+		//"daily open",
+		//"daily close",
+		//"daily low",
+		//"daily high",
+		//
+		//"weekly open",
+		//"weekly close",
+		//"weekly low",
+		//"weekly high",
+		//
+		//"monthly open",
+		//"monthly close",
+		//"monthly low",
+		//"monthly high",
 
-	if err != nil {
-		panic(err)
+		"1min open",
+		"30min open",
+		"60min open",
+		"daily open",
+		"weekly open",
+		"monthly open",
+
+		"1min close",
+		"30min close",
+		"60min close",
+		"daily close",
+		"weekly close",
+		"monthly close",
+
+		"1min low",
+		"30min low",
+		"60min low",
+		"daily low",
+		"weekly low",
+		"monthly low",
+
+		"1min high",
+		"30min high",
+		"60min high",
+		"daily high",
+		"weekly high",
+		"monthly high",
 	}
 
-	m := ind.TechnicalAnalysis
+	inds := make(map[string]*alphaVantage.IndicatorRSI)
 
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', tabwriter.Debug)
+
+	for i := range args {
+		a := strings.Split(args[i], " ")
+		print(a[0] + " " + a[1] + "\n")
+		ind, err := avAPI.IndicatorRSI(symbol, a[0], "14", a[1])
+		if err != nil {
+			print(err.Error() + "\n")
+			continue
+		}
+		inds[args[i]] = ind
 	}
-	sort.Strings(keys)
 
-	for _, k := range keys {
-		print(k, " ", m[k].RSI, "\n")
+	for i := range args {
+		date, rsi := inds[args[i]].Latest()
+		a := strings.Split(args[i], " ")
+		fmt.Fprintln(w, fmt.Sprintf("%f", rsi.RSI)+"\t"+a[0]+"\t"+a[1]+"\t"+date)
 	}
-
-	//PrettyPrint(ind)
+	w.Flush()
 }
 
 func main() {
@@ -85,52 +150,60 @@ func main() {
 	AlpClient := Alpaca("PKXAF267QI7IJV5EUW3L", "p2dCv7ZWkykxY2L7Q3mK6EpLemlAiE5zPxxRd4PR")
 	AvClient := alphaVantage.New("B5NM7SCV8LFLME8Y")
 
-	//test(AlpClient, AvClient)
+	testing := false
 
-	file, _ := os.Create("stocks.txt")
+	if testing {
+		test(AlpClient, AvClient)
+	} else {
+		fileName := time.Now().Format("02-Jan-2006")
 
-	temp, _ := os.Create("assets.txt")
+		file, _ := os.Create(fileName + ".txt")
 
-	status := "active"
-	assets, err := AlpClient.ListAssets(&status)
-	if err != nil {
-		panic(err)
-	}
+		temp, _ := os.Create("assets.txt")
 
-	for asset := range assets {
-		temp.WriteString(assets[asset].Symbol + "\n")
-	}
-	temp.Close()
-
-	for i := 0; i < len(assets); i++ {
-		a := assets[i]
-		ind, err := AvClient.IndicatorRSI(a.Symbol, "60min", "14", "close")
-		if err != nil { // write error to file
-			print(err.Error(), "\n")
-			continue
+		status := "active"
+		assets, err := AlpClient.ListAssets(&status)
+		if err != nil {
+			panic(err)
 		}
 
-		// check for over flow / running out of calls
-		print(len(ind.TechnicalAnalysis), " ")
-		if len(ind.TechnicalAnalysis) < 1 { // dashes are not friendly
-			PrettyPrint(ind.TechnicalAnalysis)
-			continue
+		for asset := range assets {
+			temp.WriteString(assets[asset].Symbol + "\n")
+		}
+		temp.Close()
+
+		for i := 0; i < len(assets); i++ {
+			a := assets[i]
+			ind, err := AvClient.IndicatorRSI(a.Symbol, "weekly", "14", "close")
+			if err != nil { // write error to file
+				print(err.Error(), "\n")
+				continue
+			}
+
+			// check for over flow / running out of calls
+			print(len(ind.TechnicalAnalysis), " ")
+			if len(ind.TechnicalAnalysis) < 1 { // dashes are not friendly
+				PrettyPrint(ind.TechnicalAnalysis)
+				continue
+			}
+
+			latest, array := ind.GetRSI()
+			tip, ema := trendFollowing.GetTrade(latest, array, false)
+			s := fmt.Sprintf("%f", latest)
+			e := fmt.Sprintf("%f", ema)
+
+			if tip.Action == "buy" && tip.Side == "long" {
+				file.WriteString(a.Symbol + " " + s + " " + e + "\n")
+				fmt.Println(a.Symbol + " " + s + " " + e + " " + strconv.Itoa(i))
+			} else {
+				fmt.Println(a.Symbol)
+			}
 		}
 
-		latest, array := ind.GetRSI()
-		tip, ema := trendFollowing.GetTrade(latest, array, false)
-		s := fmt.Sprintf("%f", latest)
-		e := fmt.Sprintf("%f", ema)
-
-		if tip.Action == "buy" {
-			file.WriteString(a.Symbol + " " + s + " " + e + "\n")
-
+		e := file.Close()
+		if e != nil {
+			panic(e)
 		}
-		fmt.Println(a.Symbol + " " + s + " " + e + " " + strconv.Itoa(i))
 	}
 
-	e := file.Close()
-	if e != nil {
-		panic(e)
-	}
 }

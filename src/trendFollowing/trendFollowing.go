@@ -22,9 +22,9 @@ func GetTrade(rsi float32, rsiArray []float32, openPosition bool) (Trade, float3
 	ema := EMA(rsiArray, 10) // this N does not have to be 10
 	result := Trade{"", ""}
 
-	if ema < 40 || ema > 60 {
+	if ema < 40 || ema > 60 { // there are ways to figure out if trend is going up
 		if rsi > ema { // also need to figure out how much to buy
-			if openPosition {
+			if !openPosition {
 				return Trade{"buy", "long"}, ema // open long position
 			} else {
 				return Trade{"sell", "short"}, ema //     close the short position

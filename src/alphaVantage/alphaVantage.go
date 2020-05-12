@@ -178,8 +178,14 @@ func (RSI *IndicatorRSI) ByMinute(date time.Time) *TechnicalRSIAnalysis {
 func (RSI *IndicatorRSI) GetRSI() (float32, []float32) { // this is daily avg?
 
 	var latest float32
+	//var array []float32
 	var array []float32
 
+	if len(RSI.TechnicalAnalysis) < 90 {
+		array = make([]float32, len(RSI.TechnicalAnalysis))
+	} else {
+		array = make([]float32, 90)
+	}
 	var dates []string
 	for date := range RSI.TechnicalAnalysis {
 		dates = append(dates, date)
@@ -193,10 +199,11 @@ func (RSI *IndicatorRSI) GetRSI() (float32, []float32) { // this is daily avg?
 	//	print(i, " ", dates[i], "\n")
 	//}
 
-	for i := range dates {
+	for i := range array {
 		r := RSI.TechnicalAnalysis[dates[i]].RSI
 		//print(i, " ", dates[i], " ", r, "\n")
-		array = append(array, float32(r))
+		//array = append(array, float32(r))
+		array[i] = float32(r)
 	}
 
 	//for i := range array {
