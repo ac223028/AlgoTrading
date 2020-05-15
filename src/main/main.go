@@ -124,7 +124,7 @@ func test(alpacaAPI *alpaca.Client, avAPI *alphaVantage.Client) {
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', tabwriter.Debug)
 
-	for i := range args {
+	for i := range args { // get all of the indicators
 		a := strings.Split(args[i], " ")
 		print(a[0] + " " + a[1] + "\n")
 		ind, err := avAPI.IndicatorRSI(symbol, a[0], "14", a[1])
@@ -135,7 +135,7 @@ func test(alpacaAPI *alpaca.Client, avAPI *alphaVantage.Client) {
 		inds[args[i]] = ind
 	}
 
-	for i := range args {
+	for i := range args { // print all of the indicators as individuals
 		date, rsi := inds[args[i]].Latest()
 		a := strings.Split(args[i], " ")
 		fmt.Fprintln(w, fmt.Sprintf("%f", rsi.RSI)+"\t"+a[0]+"\t"+a[1]+"\t"+date)
@@ -156,7 +156,7 @@ func test(alpacaAPI *alpaca.Client, avAPI *alphaVantage.Client) {
 		" close",
 	}
 
-	for _, t := range T {
+	for _, t := range T { // calculate lhc3
 		total := 0.0
 		for _, p := range P {
 			param := t + p
@@ -165,7 +165,26 @@ func test(alpacaAPI *alpaca.Client, avAPI *alphaVantage.Client) {
 		}
 		total /= 3
 
-		fmt.Fprintln(w, fmt.Sprintf("%f", total)+"\t"+"hlc3"+"\t"+t)
+		fmt.Fprintln(w, fmt.Sprintf("%f", total)+"\t"+t+"\t"+"hlc3")
+	}
+
+	P = []string{
+		" open",
+		" high",
+		" low",
+		" close",
+	}
+
+	for _, t := range T { // calculate lhc3
+		total := 0.0
+		for _, p := range P {
+			param := t + p
+			_, rsi := inds[param].Latest()
+			total += rsi.RSI
+		}
+		total /= 4
+
+		fmt.Fprintln(w, fmt.Sprintf("%f", total)+"\t"+t+"\t"+"ohlc4")
 	}
 
 	w.Flush()
@@ -178,11 +197,24 @@ func main() {
 	AlpClient := Alpaca("PKXAF267QI7IJV5EUW3L", "p2dCv7ZWkykxY2L7Q3mK6EpLemlAiE5zPxxRd4PR")
 	AvClient := alphaVantage.New("B5NM7SCV8LFLME8Y")
 
+	AccountPercentPerShare := 0.0001 // find way to normalize this or to stick it with a range
+
 	testing := true
 
 	if testing {
 		print("testing\n")
-		test(AlpClient, AvClient)
+		//params := polygon.HistoricTicksV2Params{
+		//	Timestamp:      0,
+		//	TimestampLimit: 0,
+		//	Reverse:        false,
+		//	Limit:          0,
+		//}
+		//x, y := polygon.Client{}.GetHistoricAggregatesV2()
+		//if y != nil {
+		//	print(y.Error(), "\n")
+		//}
+		//PrettyPrint(x)
+		//test(AlpClient, AvClient)
 		return
 	}
 
@@ -198,7 +230,17 @@ func main() {
 		panic(err)
 	}
 
-	for asset := range assets {
+	act, err := AlpClient.GetAccount()
+	if err != nil {
+		panic(err)
+	}
+
+	eqt, _ := act.Equity.Float64()
+	max := eqt * AccountPercentPerShare
+
+	for asset := range assets { // check for price to see if affordable
+		// note: Alpaca's api allows for 3 calls per second
+		print(max, "\n")
 		temp.WriteString(assets[asset].Symbol + "\n")
 	}
 	temp.Close()
