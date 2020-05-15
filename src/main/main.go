@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/alpacahq/alpaca-trade-api-go/alpaca"
+	"github.com/alpacahq/alpaca-trade-api-go/common"
 	"os"
 	"strconv"
 	"strings"
@@ -194,7 +195,19 @@ func main() {
 
 	// free API key: MHL1PVXKA24TUHYG
 	// prem API key: B5NM7SCV8LFLME8Y
-	AlpClient := Alpaca("PKXAF267QI7IJV5EUW3L", "p2dCv7ZWkykxY2L7Q3mK6EpLemlAiE5zPxxRd4PR")
+	API_KEY := "PKXAF267QI7IJV5EUW3L"
+	API_SECRET := "p2dCv7ZWkykxY2L7Q3mK6EpLemlAiE5zPxxRd4PR"
+	BASE_URL := "https://paper-api.alpaca.markets"
+	alpaca.SetBaseUrl(BASE_URL)
+
+	if common.Credentials().ID == "" {
+		os.Setenv(common.EnvApiKeyID, API_KEY)
+	}
+	if common.Credentials().Secret == "" {
+		os.Setenv(common.EnvApiSecretKey, API_SECRET)
+	}
+
+	AlpClient := alpaca.NewClient(common.Credentials())
 	AvClient := alphaVantage.New("B5NM7SCV8LFLME8Y")
 
 	AccountPercentPerShare := 0.0001 // find way to normalize this or to stick it with a range
@@ -209,12 +222,17 @@ func main() {
 		//	Reverse:        false,
 		//	Limit:          0,
 		//}
-		//x, y := polygon.Client{}.GetHistoricAggregatesV2()
+		//x, y := polygon.Client{}.GetHistoricAggregatesV2("F", 1, "close", time.Now(), time.Now(), false)
 		//if y != nil {
 		//	print(y.Error(), "\n")
 		//}
 		//PrettyPrint(x)
-		//test(AlpClient, AvClient)
+		test(AlpClient, AvClient)
+
+		x, y := AlpClient.GetAccount()
+		PrettyPrint(x)
+		PrettyPrint(y)
+
 		return
 	}
 
