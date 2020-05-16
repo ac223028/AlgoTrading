@@ -191,6 +191,15 @@ func test(alpacaAPI *alpaca.Client, avAPI *alphaVantage.Client) {
 	w.Flush()
 }
 
+func testADX(alpacaAPI *alpaca.Client, avAPI *alphaVantage.Client) {
+	x, y := avAPI.IndicatorADX("IBM", "daily", "10")
+	PrettyPrint(x)
+	PrettyPrint(y)
+	date, val := x.Latest()
+	PrettyPrint(date)
+	PrettyPrint(val)
+}
+
 func main() {
 
 	// free API key: MHL1PVXKA24TUHYG
@@ -227,11 +236,12 @@ func main() {
 		//	print(y.Error(), "\n")
 		//}
 		//PrettyPrint(x)
-		test(AlpClient, AvClient)
+		//test(AlpClient, AvClient)
+		testADX(AlpClient, AvClient)
 
-		x, y := AlpClient.GetAccount()
-		PrettyPrint(x)
-		PrettyPrint(y)
+		//x, y := AlpClient.GetAccount()
+		//PrettyPrint(x)
+		//PrettyPrint(y)
 
 		return
 	}
