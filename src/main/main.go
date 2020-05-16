@@ -22,43 +22,6 @@ func PrettyPrint(v interface{}) (err error) {
 	return
 }
 
-type TipSheet struct {
-	buy  []string
-	sell []string
-}
-
-func makeTipSheet(alpacaAPI *alpaca.Client, avAPI *alphaVantage.Client) []alpaca.Asset {
-	status := "active"
-	assets, err := alpacaAPI.ListAssets(&status)
-	if err != nil {
-		panic(err)
-	}
-	print(len(assets))
-
-	//var result TipSheet
-
-	//tips := make([]alpaca.Asset, 0)
-
-	//for i := range assets {
-	//	symbol := assets[i].Symbol
-	//	//rsiArray := avAPI.GetRSI(symbol) // this needs to be of days
-	//	//ema := trendFollowing.EMA(rsiArray, 100)
-	//
-	//	indicator, err := avAPI.IndicatorRSI(symbol, "daily", "14", "close")
-	//	if err != nil {
-	//		panic(err) // should change this to manage errors
-	//	}
-	//	if len(indicator.TechnicalAnalysis) == 0 {
-	//		print(symbol, " ", 0, "\n")
-	//		continue
-	//	}
-	//	date, latest := indicator.Latest()
-	//	fmt.Printf("%s %s %f %d\n", symbol, date, latest.RSI, len(indicator.TechnicalAnalysis))
-	//}
-
-	return assets
-}
-
 func test(alpacaAPI *alpaca.Client, avAPI *alphaVantage.Client) {
 	symbol := "F"
 	args := []string{
@@ -200,7 +163,7 @@ func testADX(alpacaAPI *alpaca.Client, avAPI *alphaVantage.Client) {
 	PrettyPrint(val)
 }
 
-func main() {
+func main() { /////////////////////////////////////////	  MAIN	 ///////////////////////////////////////////////////////
 
 	// free API key: MHL1PVXKA24TUHYG
 	// prem API key: B5NM7SCV8LFLME8Y
@@ -267,7 +230,7 @@ func main() {
 	max := eqt * AccountPercentPerShare
 
 	for asset := range assets { // check for price to see if affordable
-		// note: Alpaca's api allows for 3 calls per second
+		// note: Alpaca's api allows for 3 calls per second; this is much faster than running through the algorithm
 		print(max, "\n")
 		temp.WriteString(assets[asset].Symbol + "\n")
 	}

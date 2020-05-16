@@ -74,7 +74,3 @@ func EMA(data []float32, N int, kOptional ...float32) float32 { // may want to l
 	//result := data[0] * k + y * (1-k) // based on investopedia (almost the same as excel)
 	return result
 }
-
-func GetTipSheet() int {
-	return 0
-}
