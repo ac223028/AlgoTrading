@@ -40,19 +40,23 @@ func GetTrade(openPosition bool, ticker string, AvClient *alphaVantage.Client) (
 
 	if ema < 40 || ema > 60 { // there are ways to figure out if trend is going up
 		if rsi > ema { // also need to figure out how much to buy
-			// run the check on momentum here
-			if !openPosition {
-				return Trade{"buy", "long"}, ema // open long position
-			} else {
-				return Trade{"sell", "short"}, ema //     close the short position
+			// run the check on momentum here: advancing
+			if checkMomentum(AvClient, ticker) > 0 { // think about error as a means of correction
+				if !openPosition {
+					return Trade{"buy", "long"}, ema // open long position
+				} else {
+					return Trade{"sell", "short"}, ema // close the short position
+				}
 			}
 		}
 		if rsi < ema {
-			// run the check on momentum here
-			if !openPosition {
-				return Trade{"buy", "short"}, ema // open a short position
-			} else {
-				return Trade{"sell", "long"}, ema // close the long position
+			// run the check on momentum here: declining
+			if checkMomentum(AvClient, ticker) < 0 {
+				if !openPosition {
+					return Trade{"buy", "short"}, ema // open a short position
+				} else {
+					return Trade{"sell", "long"}, ema // close the long position
+				}
 			}
 		}
 	}
