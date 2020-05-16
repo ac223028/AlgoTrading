@@ -182,6 +182,9 @@ func main() { /////////////////////////////////////////	  MAIN	 ////////////////
 	AlpClient := alpaca.NewClient(common.Credentials())
 	AvClient := alphaVantage.New("B5NM7SCV8LFLME8Y")
 
+	//x := polygon.NewClient(common.Credentials())
+	//x.GetStockExchanges()
+
 	AccountPercentPerShare := 0.0001 // find way to normalize this or to stick it with a range
 
 	testing := true
@@ -211,7 +214,7 @@ func main() { /////////////////////////////////////////	  MAIN	 ////////////////
 
 	fileName := time.Now().Format("02-Jan-2006")
 
-	file, _ := os.Create(fileName + ".txt")
+	file, _ := os.Create(fileName + ".txt") // i think i am ignoring an error here using the _
 
 	temp, _ := os.Create("assets.txt")
 
@@ -236,27 +239,15 @@ func main() { /////////////////////////////////////////	  MAIN	 ////////////////
 	}
 	temp.Close()
 
-	for i := 0; i < len(assets); i++ {
+	for i := 0; i < len(assets); i++ { // this needs to be re-evaluated
 		a := assets[i]
-		ind, err := AvClient.IndicatorRSI(a.Symbol, "weekly", "14", "close")
-		if err != nil { // write error to file
-			print(err.Error(), "\n")
-			continue
-		}
 
-		// check for over flow / running out of calls
-		print(len(ind.TechnicalAnalysis), " ")
-		if len(ind.TechnicalAnalysis) < 1 { // dashes are not friendly
-			PrettyPrint(ind.TechnicalAnalysis)
-			continue
-		}
-
-		latest, array := ind.GetRSI()
-		tip, ema := trendFollowing.GetTrade(latest, array, false)
-		s := fmt.Sprintf("%f", latest)
+		tip, ema := trendFollowing.GetTrade(false, a.Symbol, AvClient) // need to check position open
+		s := fmt.Sprintf("%f", 5.0)                                    // this is a placeholder
+		//s := fmt.Sprintf("%f", latest)
 		e := fmt.Sprintf("%f", ema)
 
-		if tip.Action == "buy" && tip.Side == "long" {
+		if tip.Action == "buy" && tip.Side == "long" { // write and read to files
 			file.WriteString(a.Symbol + " " + s + " " + e + "\n")
 			fmt.Println(a.Symbol + " " + s + " " + e + " " + strconv.Itoa(i))
 		} else {

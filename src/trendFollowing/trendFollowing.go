@@ -1,6 +1,7 @@
 package trendFollowing
 
 import (
+	"../alphaVantage"
 	"encoding/json"
 	"fmt"
 )
@@ -18,12 +19,28 @@ type Trade struct {
 	Side   string
 }
 
-func GetTrade(rsi float32, rsiArray []float32, openPosition bool) (Trade, float32) { // need to incorporate time as an input
+func GetTrade(openPosition bool, ticker string, AvClient *alphaVantage.Client) (Trade, float32) { // need to incorporate time as an input
+	indRSI, err := AvClient.IndicatorRSI(ticker, "weekly", "14", "close")
+	rsi, rsiArray := indRSI.GetRSI()
+
 	ema := EMA(rsiArray, 10) // this N does not have to be 10
 	result := Trade{"", ""}
 
+	if err != nil { // write error to file
+		print(err.Error(), "\n")
+		return result, -1 // there needs to be a better solution to this
+	}
+
+	// check for over flow / running out of calls
+	print(len(indRSI.TechnicalAnalysis), " ")
+	if len(indRSI.TechnicalAnalysis) < 1 { // dashes are not friendly
+		PrettyPrint(indRSI.TechnicalAnalysis) // there needs to be a better check of this
+		return result, -1
+	}
+
 	if ema < 40 || ema > 60 { // there are ways to figure out if trend is going up
 		if rsi > ema { // also need to figure out how much to buy
+			// run the check on momentum here
 			if !openPosition {
 				return Trade{"buy", "long"}, ema // open long position
 			} else {
@@ -31,6 +48,7 @@ func GetTrade(rsi float32, rsiArray []float32, openPosition bool) (Trade, float3
 			}
 		}
 		if rsi < ema {
+			// run the check on momentum here
 			if !openPosition {
 				return Trade{"buy", "short"}, ema // open a short position
 			} else {
@@ -39,6 +57,43 @@ func GetTrade(rsi float32, rsiArray []float32, openPosition bool) (Trade, float3
 		}
 	}
 	return result, ema
+}
+
+func checkMomentum(AvClient *alphaVantage.Client, ticker string) float64 {
+	// returns +float for upward, -float for downward, zero otherwise
+	interval := ""
+	timePeriod := ""
+
+	indADX, err := AvClient.IndicatorADX(ticker, interval, timePeriod)
+	if err != nil {
+		panic(err)
+	}
+
+	_, latestADX := indADX.Latest()
+
+	if latestADX.ADX >= 50 {
+		indPLUS_DI, err := AvClient.IndicatorPLUS_DI(ticker, interval, timePeriod)
+		if err != nil {
+			panic(err)
+		}
+		indMINUS_DI, err := AvClient.IndicatorMINUS_DI(ticker, interval, timePeriod)
+		if err != nil {
+			panic(err)
+		}
+
+		_, latestPLUS := indPLUS_DI.Latest()
+		_, latestMINUS := indMINUS_DI.Latest()
+		pos := latestPLUS.PLUS_DI
+		neg := latestMINUS.MINUS_DI
+
+		if pos > neg {
+			return pos - neg
+		} else {
+			return pos - neg
+		}
+	}
+
+	return 0
 }
 
 func SMA(data []float32) float32 {
