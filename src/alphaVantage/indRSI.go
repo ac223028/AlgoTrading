@@ -40,8 +40,7 @@ func toIndicatorRSI(buf []byte) (*IndicatorRSI, error) {
 
 // IndicatorRSI fetches the "RSI" indicators for given symbol from API.
 // The order of dates in TechnicalAnalysis is random because it's a map.
-func (c *Client) IndicatorRSI(symbol string, interval string, timePeriod string, seriesType string) (*IndicatorRSI, error) { // come back to make them enums?
-	// the daily RSI 14 close is Alpaca's Wilder's 1 year RSI 14
+func (c *Client) IndicatorRSI(symbol string, interval string, timePeriod string, seriesType string) (*IndicatorRSI, error) {
 
 	url := fmt.Sprintf("%s/query?function=%s&symbol=%s&interval=%s&time_period=%s&series_type=%s&apikey=%s",
 		baseURL, "RSI", symbol, interval, timePeriod, seriesType, c.apiKey)
@@ -52,6 +51,10 @@ func (c *Client) IndicatorRSI(symbol string, interval string, timePeriod string,
 	indicator, err := toIndicatorRSI(body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	if len(indicator.TechnicalAnalysis) == 0 {
+		return nil, fmt.Errorf("there is no indicator data: %w", err)
 	}
 
 	return indicator, nil

@@ -10,6 +10,7 @@ func main() {
 
 }
 
+// TODO: all of this
 // needs ways to determine how many shares to buy and if my account can afford it
 //     split the account into quarters (when determining number of shares to buy, floor divide)
 // needs a way to find if a share is sell-able or not

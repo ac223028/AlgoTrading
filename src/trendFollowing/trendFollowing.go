@@ -19,70 +19,80 @@ type Trade struct {
 	Side   string
 }
 
-func GetTrade(openPosition bool, ticker string, AvClient *alphaVantage.Client) (Trade, float32) { // need to incorporate time as an input
-	indRSI, err := AvClient.IndicatorRSI(ticker, "weekly", "14", "close")
-	rsi, rsiArray := indRSI.GetRSI()
+func GetTrade(openPosition bool, ticker string, AvClient *alphaVantage.Client) Trade {
+	interval := "weekly" // these params can be changed
+	timePeriod := "14"
+	seriesType := "close"
+	indRSI, err := AvClient.IndicatorRSI(ticker, interval, timePeriod, seriesType)
 
-	ema := EMA(rsiArray, 10) // this N does not have to be 10
+	print(ticker)
+
 	result := Trade{"", ""}
 
 	if err != nil { // write error to file
-		print(err.Error(), "\n")
-		return result, -1 // there needs to be a better solution to this
+		//print(" ", err.Error(), " RSI")
+		return result // TODO: there needs to be a better solution to this
 	}
 
-	// check for over flow / running out of calls
-	print(len(indRSI.TechnicalAnalysis), " ")
+	//PrettyPrint(indRSI)
+	rsi, rsiArray := indRSI.GetRSI()
+	print(" ", rsi)
+
+	ema := EMA(rsiArray, 10) // TODO: this N does not have to be 10
+	print(" ", ema)
+
 	if len(indRSI.TechnicalAnalysis) < 1 { // dashes are not friendly
-		PrettyPrint(indRSI.TechnicalAnalysis) // there needs to be a better check of this
-		return result, -1
+		//PrettyPrint(indRSI.TechnicalAnalysis) // TODO: there needs to be a better check of this
+		return result
 	}
 
 	if ema < 40 || ema > 60 { // there are ways to figure out if trend is going up
 		if rsi > ema { // also need to figure out how much to buy
 			// run the check on momentum here: advancing
-			if checkMomentum(AvClient, ticker) > 0 { // think about error as a means of correction
+			if checkMomentum(AvClient, ticker, interval, timePeriod) > 0 { // think about error as a means of correction
 				if !openPosition {
-					return Trade{"buy", "long"}, ema // open long position
+					return Trade{"buy", "long"} // open long position
 				} else {
-					return Trade{"sell", "short"}, ema // close the short position
+					return Trade{"sell", "short"} // close the short position
 				}
 			}
 		}
 		if rsi < ema {
 			// run the check on momentum here: declining
-			if checkMomentum(AvClient, ticker) < 0 {
+			if checkMomentum(AvClient, ticker, interval, timePeriod) < 0 {
 				if !openPosition {
-					return Trade{"buy", "short"}, ema // open a short position
+					return Trade{"buy", "short"} // open a short position
 				} else {
-					return Trade{"sell", "long"}, ema // close the long position
+					return Trade{"sell", "long"} // close the long position
 				}
 			}
 		}
 	}
-	return result, ema
+	return result
 }
 
-func checkMomentum(AvClient *alphaVantage.Client, ticker string) float64 {
+func checkMomentum(AvClient *alphaVantage.Client, ticker string, interval string, timePeriod string) float64 {
 	// returns +float for upward, -float for downward, zero otherwise
-	interval := ""
-	timePeriod := ""
 
 	indADX, err := AvClient.IndicatorADX(ticker, interval, timePeriod)
 	if err != nil {
-		panic(err)
+		//print(" ", err.Error(), " ADX")
+		return 0
 	}
 
 	_, latestADX := indADX.Latest()
+	print(" ", latestADX.ADX)
 
-	if latestADX.ADX >= 50 {
+	if latestADX.ADX >= 45 {
 		indPLUS_DI, err := AvClient.IndicatorPLUS_DI(ticker, interval, timePeriod)
 		if err != nil {
-			panic(err)
+			//print(" ", err.Error(), " +DI")
+			return 0 // there needs to be a better solution to this
 		}
 		indMINUS_DI, err := AvClient.IndicatorMINUS_DI(ticker, interval, timePeriod)
 		if err != nil {
-			panic(err)
+			//print(" ", err.Error(), " -DI")
+			return 0 // there needs to be a better solution to this
 		}
 
 		_, latestPLUS := indPLUS_DI.Latest()
@@ -90,11 +100,10 @@ func checkMomentum(AvClient *alphaVantage.Client, ticker string) float64 {
 		pos := latestPLUS.PLUS_DI
 		neg := latestMINUS.MINUS_DI
 
-		if pos > neg {
-			return pos - neg
-		} else {
-			return pos - neg
-		}
+		print(" ", pos)
+		print(" ", neg)
+
+		return pos - neg
 	}
 
 	return 0

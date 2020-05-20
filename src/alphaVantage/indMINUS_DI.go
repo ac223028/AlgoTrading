@@ -36,8 +36,7 @@ func toIndicatorMINUS_DI(buf []byte) (*IndicatorMINUS_DI, error) {
 
 // IndicatorMINUS_DI fetches the "MINUS_DI" indicators for given symbol from API.
 // The order of dates in TechnicalAnalysis is random because it's a map.
-func (c *Client) IndicatorMINUS_DI(symbol string, interval string, timePeriod string) (*IndicatorMINUS_DI, error) { // come back to make them enums?
-	// the daily MINUS_DI 14 close is Alpaca's Wilder's 1 year MINUS_DI 14
+func (c *Client) IndicatorMINUS_DI(symbol string, interval string, timePeriod string) (*IndicatorMINUS_DI, error) {
 
 	url := fmt.Sprintf("%s/query?function=%s&symbol=%s&interval=%s&time_period=%s&apikey=%s",
 		baseURL, "MINUS_DI", symbol, interval, timePeriod, c.apiKey)
@@ -48,6 +47,10 @@ func (c *Client) IndicatorMINUS_DI(symbol string, interval string, timePeriod st
 	indicator, err := toIndicatorMINUS_DI(body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	if len(indicator.TechnicalAnalysis) == 0 {
+		return nil, fmt.Errorf("there is no indicator data: %w", err)
 	}
 
 	return indicator, nil

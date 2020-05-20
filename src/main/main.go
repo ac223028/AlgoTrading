@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"github.com/alpacahq/alpaca-trade-api-go/alpaca"
 	"github.com/alpacahq/alpaca-trade-api-go/common"
+	"io/ioutil"
 	"os"
-	"strconv"
 	"strings"
 	"text/tabwriter"
 	"time"
@@ -93,7 +93,7 @@ func test(alpacaAPI *alpaca.Client, avAPI *alphaVantage.Client) {
 		print(a[0] + " " + a[1] + "\n")
 		ind, err := avAPI.IndicatorRSI(symbol, a[0], "14", a[1])
 		if err != nil {
-			print(err.Error() + "\n")
+			print(err.Error() + " RSI\n")
 			continue
 		}
 		inds[args[i]] = ind
@@ -163,6 +163,91 @@ func testADX(alpacaAPI *alpaca.Client, avAPI *alphaVantage.Client) {
 	PrettyPrint(val)
 }
 
+func checkError(e error) {
+	if e != nil {
+		PrettyPrint(e.Error())
+	}
+}
+
+func getData(alpacaAPI *alpaca.Client, avAPI *alphaVantage.Client, date string, fileName string,
+	interval string, timePeriod string, seriesType string) {
+	// date in "YYYY-MM-DD" format or "2006-01-02"
+	//interval := "weekly"
+	//timePeriod := "14"
+	//seriesType := "close"
+	dat, err := ioutil.ReadFile(fileName) // reads assets form file // CHANGE TO BE DATE UNIQUE
+	if err != nil {
+		panic(err)
+	}
+	affordableAssets := strings.Split(string(dat), "\r\n") // this is a bug that needs ot be squashed
+
+	outputName := date + "_" + interval + "_" + timePeriod + "_" + seriesType + ".txt"
+
+	file, e := os.Open("C:/Trading/" + outputName)
+	if e != nil {
+		file, _ = os.Create("C:/Trading/" + outputName)
+	}
+
+	for _, symbol := range affordableAssets {
+
+		t, _ := time.Parse("2006-01-02", "2020-05-17")
+		param := alpaca.ListBarParams{
+			Timeframe: "day",
+			StartDt:   &t,
+			EndDt:     nil,
+			Limit:     nil,
+		}
+
+		//o := float32(0.0)
+		c := float32(0.0)
+		ag, erro := alpacaAPI.GetSymbolBars(symbol, param)
+		if erro == nil {
+			for _, i := range ag {
+				if time.Unix(i.Time, 0).Format("2006-01-02") == t.Format("2006-01-02") {
+					c = i.Close
+					//print(t.Format("2006-01-02"),"\n")
+					t = t.Add(time.Hour * 24)
+					break
+				}
+			}
+			//for _,i := range ag {
+			//	if time.Unix(i.Time,0).Format("2006-01-02") == t.Format("2006-01-02") {
+			//		//print(t.Format("2006-01-02"),"\n")
+			//		//PrettyPrint(i)
+			//		o = i.Open
+			//		break
+			//	}
+			//}
+			// find the following open value
+		}
+		close := fmt.Sprintf("%f", c)
+		//open := fmt.Sprintf("%f", o)
+
+		INDrsi, err := avAPI.IndicatorRSI(symbol, interval, timePeriod, seriesType)
+		checkError(err)
+		INDadx, err := avAPI.IndicatorADX(symbol, interval, timePeriod)
+		checkError(err)
+		INDplus, err := avAPI.IndicatorPLUS_DI(symbol, interval, timePeriod)
+		checkError(err)
+		INDminus, err := avAPI.IndicatorMINUS_DI(symbol, interval, timePeriod)
+		checkError(err)
+
+		rsi := fmt.Sprintf("%f", INDrsi.TechnicalAnalysis[date].RSI)
+		adx := fmt.Sprintf("%f", INDadx.TechnicalAnalysis[date].ADX)
+		plus := fmt.Sprintf("%f", INDplus.TechnicalAnalysis[date].PLUS_DI)
+		minus := fmt.Sprintf("%f", INDminus.TechnicalAnalysis[date].MINUS_DI)
+
+		outString := "" + symbol + " " + rsi + " " + adx + " " + plus + " " + minus + " " + close + "\n"
+		print(outString)
+		file.WriteString(outString)
+	}
+	file.Close()
+}
+
+func getA(alpacaAPI *alpaca.Client, avAPI *alphaVantage.Client) {
+
+}
+
 func main() { /////////////////////////////////////////	  MAIN	 ///////////////////////////////////////////////////////
 
 	// free API key: MHL1PVXKA24TUHYG
@@ -185,38 +270,52 @@ func main() { /////////////////////////////////////////	  MAIN	 ////////////////
 	//x := polygon.NewClient(common.Credentials())
 	//x.GetStockExchanges()
 
-	AccountPercentPerShare := 0.0001 // find way to normalize this or to stick it with a range
+	//AccountPercentPerShare := 0.0001 // TODO: find way to normalize this or to stick it with a range
 
-	testing := true
+	testing := false
 
 	if testing {
 		print("testing\n")
-		//params := polygon.HistoricTicksV2Params{
-		//	Timestamp:      0,
-		//	TimestampLimit: 0,
-		//	Reverse:        false,
-		//	Limit:          0,
+		//intervals := []string{
+		//	"weekly",
 		//}
-		//x, y := polygon.Client{}.GetHistoricAggregatesV2("F", 1, "close", time.Now(), time.Now(), false)
-		//if y != nil {
-		//	print(y.Error(), "\n")
+		//
+		//tPs := []string{
+		//	"10",
+		//	"11",
+		//	"12",
+		//	"13",
+		//	"14",
+		//	"15",
+		//	"16",
 		//}
-		//PrettyPrint(x)
-		//test(AlpClient, AvClient)
-		testADX(AlpClient, AvClient)
+		//
+		//sTs := []string{
+		//	"open",
+		//	"high",
+		//	"low",
+		//	"close",
+		//}
+		//
+		//for _, interval := range intervals{
+		//	for _, timePeriod := range tPs{
+		//		for _, seriesType := range sTs {
+		//			print(interval, " ", timePeriod, " ", seriesType, "\n")
+		//			getData(AlpClient, AvClient,"2020-05-15", "17-May-2020.txt", interval, timePeriod, seriesType)
+		//		}
+		//	}
+		//}
 
-		//x, y := AlpClient.GetAccount()
-		//PrettyPrint(x)
-		//PrettyPrint(y)
+		os.Create("C:/Trading/hi_there.txt")
 
 		return
 	}
 
 	fileName := time.Now().Format("02-Jan-2006")
 
-	file, _ := os.Create(fileName + ".txt") // i think i am ignoring an error here using the _
+	file, _ := os.Create("C:/Trading/" + fileName + ".txt") // i think i am ignoring an error here using the _
 
-	temp, _ := os.Create("assets.txt")
+	temp, _ := os.Create("C:/Trading/" + fileName + "assets.txt")
 
 	status := "active"
 	assets, err := AlpClient.ListAssets(&status)
@@ -224,34 +323,70 @@ func main() { /////////////////////////////////////////	  MAIN	 ////////////////
 		panic(err)
 	}
 
-	act, err := AlpClient.GetAccount()
+	//act, err := AlpClient.GetAccount() // commented out for Nathan's testing
+	//if err != nil {
+	//	panic(err)
+	//}
+	//
+	//eqt, _ := act.Equity.Float64()
+	//max := eqt * AccountPercentPerShare
+	// TODO: better equation for this ^^^
+
+	max := 10 // this is for testing purposes
+	print("max: ", max, "\n")
+
+	missed := 0 // this is for testing
+
+	print("see if price is cheaper than max(", max, "):\n")
+
+	for _, asset := range assets { // check for price to see if affordable
+		//note: Alpaca's api allows for 3 calls per second; this is much faster than running through the algorithm
+		time.Sleep(300 * time.Millisecond) // this could be closer to 1/3 i think, so long as it is <= 1/3
+		lastPrice, err := AlpClient.GetLastQuote(asset.Symbol)
+		if err != nil {
+
+			if err.Error() != "resource not found" {
+				missed += 1
+				continue
+			}
+			continue
+		}
+
+		if lastPrice.Last.AskPrice < float32(max) {
+			print(asset.Symbol, " ", lastPrice.Last.AskPrice, "\n")
+			temp.WriteString(asset.Symbol + " " + fmt.Sprintf("%f", lastPrice.Last.AskPrice) + "\n")
+		}
+
+		//temp.WriteString(asset.Symbol + "\n")
+	}
+	print("missed: ", missed, "\n")
+	temp.Close()
+
+	dat, err := ioutil.ReadFile("C:/Trading/" + fileName + "assets.txt") // reads assets form file
 	if err != nil {
 		panic(err)
 	}
+	affordableAssets := strings.Split(string(dat), "\n")
 
-	eqt, _ := act.Equity.Float64()
-	max := eqt * AccountPercentPerShare
-
-	for asset := range assets { // check for price to see if affordable
-		// note: Alpaca's api allows for 3 calls per second; this is much faster than running through the algorithm
-		print(max, "\n")
-		temp.WriteString(assets[asset].Symbol + "\n")
+	for i := range affordableAssets { // assets from file
+		affordableAssets[i] = strings.Split(affordableAssets[i], " ")[0] // this should be made cleaner
 	}
-	temp.Close()
 
-	for i := 0; i < len(assets); i++ { // this needs to be re-evaluated
-		a := assets[i]
+	// split
 
-		tip, ema := trendFollowing.GetTrade(false, a.Symbol, AvClient) // need to check position open
-		s := fmt.Sprintf("%f", 5.0)                                    // this is a placeholder
-		//s := fmt.Sprintf("%f", latest)
-		e := fmt.Sprintf("%f", ema)
+	print("ticker rsi ema(rsi) adx plusDI minusDI error\n ")
+	for i := 0; i < len(affordableAssets); i++ { // this needs to be re-evaluated
+		a := affordableAssets[i]
+		//print(a, "\n")
+
+		tip := trendFollowing.GetTrade(false, a, AvClient) // need to check position open
+		print("\n")
 
 		if tip.Action == "buy" && tip.Side == "long" { // write and read to files
-			file.WriteString(a.Symbol + " " + s + " " + e + "\n")
-			fmt.Println(a.Symbol + " " + s + " " + e + " " + strconv.Itoa(i))
+			file.WriteString(a + "\n")
+			//fmt.Println("\n" + a + " " + e + " " + strconv.Itoa(i))
 		} else {
-			fmt.Println(a.Symbol)
+			//fmt.Print(" " + a)
 		}
 	}
 
@@ -260,4 +395,6 @@ func main() { /////////////////////////////////////////	  MAIN	 ////////////////
 		panic(e)
 	}
 
+	d := time.Now().Format("2006-01-02")
+	getData(AlpClient, AvClient, d, fileName, "weekly", "14", "close")
 }

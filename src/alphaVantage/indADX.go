@@ -36,8 +36,7 @@ func toIndicatorADX(buf []byte) (*IndicatorADX, error) {
 
 // IndicatorADX fetches the "ADX" indicators for given symbol from API.
 // The order of dates in TechnicalAnalysis is random because it's a map.
-func (c *Client) IndicatorADX(symbol string, interval string, timePeriod string) (*IndicatorADX, error) { // come back to make them enums?
-	// the daily ADX 14 close is Alpaca's Wilder's 1 year ADX 14
+func (c *Client) IndicatorADX(symbol string, interval string, timePeriod string) (*IndicatorADX, error) {
 
 	url := fmt.Sprintf("%s/query?function=%s&symbol=%s&interval=%s&time_period=%s&apikey=%s",
 		baseURL, "ADX", symbol, interval, timePeriod, c.apiKey)
@@ -48,6 +47,10 @@ func (c *Client) IndicatorADX(symbol string, interval string, timePeriod string)
 	indicator, err := toIndicatorADX(body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	if len(indicator.TechnicalAnalysis) == 0 {
+		return nil, fmt.Errorf("there is no indicator data: %w", err)
 	}
 
 	return indicator, nil

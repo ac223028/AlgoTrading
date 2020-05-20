@@ -17,7 +17,7 @@ import (
 //}
 
 const baseURL = "https://www.alphavantage.co"
-const httpDelayPerRequest = time.Second * 2 // may have to do something about this
+const httpDelayPerRequest = time.Second * 2 // TODO: may have to do something about this
 
 // Client represents a new alphavantage client
 type Client struct {
