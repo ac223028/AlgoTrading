@@ -170,16 +170,16 @@ func checkError(e error) {
 }
 
 func getData(alpacaAPI *alpaca.Client, avAPI *alphaVantage.Client, date string, fileName string,
-	interval string, timePeriod string, seriesType string) {
+	interval string, timePeriod string, seriesType string) { // need to get EMA(RSI)
 	// date in "YYYY-MM-DD" format or "2006-01-02"
 	//interval := "weekly"
 	//timePeriod := "14"
 	//seriesType := "close"
-	dat, err := ioutil.ReadFile(fileName) // reads assets form file // CHANGE TO BE DATE UNIQUE
+	dat, err := ioutil.ReadFile(fileName + ".txt") // reads assets form file // CHANGE TO BE DATE UNIQUE
 	if err != nil {
 		panic(err)
 	}
-	affordableAssets := strings.Split(string(dat), "\r\n") // this is a bug that needs ot be squashed
+	affordableAssets := strings.Split(string(dat), "\n") // this is a bug that needs ot be squashed
 
 	outputName := date + "_" + interval + "_" + timePeriod + "_" + seriesType + ".txt"
 
@@ -306,7 +306,11 @@ func main() { /////////////////////////////////////////	  MAIN	 ////////////////
 		//	}
 		//}
 
-		os.Create("C:/Trading/hi_there.txt")
+		//os.Create("C:/Trading/hi_there.txt")
+
+		d := time.Now().Add(-time.Hour * 24).Format("2006-01-02")
+		fileName := time.Now().Add(-time.Hour * 24).Format("02-Jan-2006")
+		getData(AlpClient, AvClient, d, fileName, "weekly", "14", "close")
 
 		return
 	}
