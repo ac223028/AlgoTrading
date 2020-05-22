@@ -1,5 +1,6 @@
 package trendFollowing
 
+// TODO: if no data do nto return 0
 import (
 	"../alphaVantage"
 	"encoding/json"
@@ -36,6 +37,11 @@ func GetTrade(openPosition bool, ticker string, AvClient *alphaVantage.Client) T
 
 	//PrettyPrint(indRSI)
 	rsi, rsiArray := indRSI.GetRSI()
+
+	if rsi < 50 {
+		return result
+	}
+
 	print(" ", rsi)
 
 	ema := EMA(rsiArray, 10) // TODO: this N does not have to be 10
@@ -83,7 +89,7 @@ func checkMomentum(AvClient *alphaVantage.Client, ticker string, interval string
 	_, latestADX := indADX.Latest()
 	print(" ", latestADX.ADX)
 
-	if latestADX.ADX >= 45 {
+	if latestADX.ADX > 45 { // nathan wanted 44
 		indPLUS_DI, err := AvClient.IndicatorPLUS_DI(ticker, interval, timePeriod)
 		if err != nil {
 			//print(" ", err.Error(), " +DI")
@@ -101,7 +107,19 @@ func checkMomentum(AvClient *alphaVantage.Client, ticker string, interval string
 		neg := latestMINUS.MINUS_DI
 
 		print(" ", pos)
+		//if pos < 40 { // nathan
+		//	return 0
+		//}
+
 		print(" ", neg)
+		//if neg < 10 { // nathan
+		//	return 0
+		//}
+
+		//IndicatorNathan := pos / (pos - neg)
+		//if IndicatorNathan < 1.2 {
+		//	return 0
+		//}
 
 		return pos - neg
 	}
