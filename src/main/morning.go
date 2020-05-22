@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/alpacahq/alpaca-trade-api-go/alpaca"
 	"github.com/alpacahq/alpaca-trade-api-go/common"
 	"github.com/shopspring/decimal"
@@ -12,13 +14,13 @@ import (
 	"time"
 )
 
-//func PrettyPrint(v interface{}) (err error) {
-//	b, err := json.MarshalIndent(v, "", "  ")
-//	if err == nil {
-//		fmt.Println(string(b))
-//	}
-//	return
-//}
+func PrettyPrinta(v interface{}) (err error) {
+	b, err := json.MarshalIndent(v, "", "  ")
+	if err == nil {
+		fmt.Println(string(b))
+	}
+	return
+}
 
 func buyStocks(alpacaAPI *alpaca.Client, account *alpaca.Account, tips []string, times int) {
 	print("Started Buying\n")
@@ -38,7 +40,7 @@ func buyStocks(alpacaAPI *alpaca.Client, account *alpaca.Account, tips []string,
 			_, err := alpacaAPI.PlaceOrder(request)
 
 			if err != nil {
-				PrettyPrint(err.Error())
+				PrettyPrinta(err.Error())
 				continue
 			}
 
@@ -51,7 +53,7 @@ func sumTipPrices(tips []string) float64 {
 	result := 0.0
 	for _, tip := range tips {
 		p := strings.Split(tip, " ")[1]
-		//PrettyPrint(p)
+		//PrettyPrinta(p)
 		price, err := strconv.ParseFloat(p, 64)
 		if err != nil {
 			panic(err)
@@ -98,7 +100,7 @@ func main() {
 	}
 
 	tips := strings.Split(strings.TrimSpace(string(dat)), "\n") // TODO: sort by prices low to high
-	PrettyPrint(tips)
+	PrettyPrinta(tips)
 
 	sum := sumTipPrices(tips)
 	print("Total cost of single set of stock: ", sum, "\n")
@@ -121,8 +123,8 @@ func main() {
 	mult := int(math.Floor(bp / sum))
 	print("Will buy ", mult, " set(s) of stocks\n")
 
-	//PrettyPrint(mult)
-	//PrettyPrint(bp)
+	//PrettyPrinta(mult)
+	//PrettyPrinta(bp)
 
 	print("Buying stocks\n")
 	buyStocks(AlpClient, account, tips, mult)

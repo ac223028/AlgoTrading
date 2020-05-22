@@ -13,6 +13,8 @@ import (
 	"time"
 )
 
+// TODO: work on error messages...
+
 func PrettyPrint(v interface{}) (err error) {
 	b, err := json.MarshalIndent(v, "", "  ")
 	if err == nil {
@@ -105,7 +107,7 @@ func main() { /////////////////////////////////////////	  MAIN	 ////////////////
 	AlpClient := alpaca.NewClient(common.Credentials())
 	AvClient := alphaVantage.New("B5NM7SCV8LFLME8Y")
 
-	testing := true
+	testing := false
 
 	if testing {
 		print("testing\n")

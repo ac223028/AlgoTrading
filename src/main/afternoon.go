@@ -10,12 +10,6 @@ import (
 	"time"
 )
 
-//func checkError(e error) {
-//	if e != nil {
-//		PrettyPrint(e.Error())
-//	}
-//}
-
 func getDataPrices(alpacaAPI *alpaca.Client, timeT time.Time) {
 	fromFile := timeT.Format("2006-01-02")                         // TODO: fix this naming scheme
 	dat, err := ioutil.ReadFile("C:/Trading/" + fromFile + ".txt") // reads assets form file
