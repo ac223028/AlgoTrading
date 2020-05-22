@@ -65,16 +65,19 @@ func getIndData(alpacaAPI *alpaca.Client, avAPI *alphaVantage.Client, date time.
 		INDminus, err := avAPI.IndicatorMINUS_DI(symbol, interval, timePeriod)
 		checkError(err)
 
-		temp := date.Format("2006-01-02")
-
 		RSI, arr := INDrsi.GetRSI()
 		EMA := trendFollowing.EMA(arr, 10)
 
 		rsi := fmt.Sprintf("%f", RSI)
 		ema := fmt.Sprintf("%f", EMA)
-		adx := fmt.Sprintf("%f", INDadx.TechnicalAnalysis[temp].ADX)
-		plus := fmt.Sprintf("%f", INDplus.TechnicalAnalysis[temp].PLUS_DI)
-		minus := fmt.Sprintf("%f", INDminus.TechnicalAnalysis[temp].MINUS_DI)
+
+		_, A := INDadx.Latest()
+		_, B := INDplus.Latest()
+		_, C := INDminus.Latest()
+
+		adx := strings.Trim(fmt.Sprintf("%f", *A), "{}")
+		plus := strings.Trim(fmt.Sprintf("%f", *B), "{}")
+		minus := strings.Trim(fmt.Sprintf("%f", *C), "{}")
 
 		outString := "" + symbol + " " + rsi + " " + ema + " " + adx + " " + plus + " " + minus + "\n"
 		print(outString)
