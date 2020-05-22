@@ -137,7 +137,7 @@ func main() { /////////////////////////////////////////	  MAIN	 ////////////////
 	}
 
 	max := 10 // price to keep under
-	min := 5
+	//min := 5 // nathan
 	print("max: ", max, "\n")
 
 	missed := 0
@@ -157,7 +157,7 @@ func main() { /////////////////////////////////////////	  MAIN	 ////////////////
 			continue
 		}
 
-		if lastPrice.Last.AskPrice < float32(max) && lastPrice.Last.AskPrice > float32(min) { // nathan
+		if lastPrice.Last.AskPrice < float32(max) { // && lastPrice.Last.AskPrice > float32(min) { // nathan
 			print(asset.Symbol, " ", lastPrice.Last.AskPrice, "\n")
 			assetsOut.WriteString(asset.Symbol + " " + fmt.Sprintf("%f", lastPrice.Last.AskPrice) + "\n")
 		}

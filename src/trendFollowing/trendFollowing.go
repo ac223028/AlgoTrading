@@ -38,9 +38,9 @@ func GetTrade(openPosition bool, ticker string, AvClient *alphaVantage.Client) T
 	//PrettyPrint(indRSI)
 	rsi, rsiArray := indRSI.GetRSI()
 
-	if rsi < 50 {
-		return result
-	}
+	//if rsi < 50 { //nathan
+	//	return result
+	//}
 
 	print(" ", rsi)
 
