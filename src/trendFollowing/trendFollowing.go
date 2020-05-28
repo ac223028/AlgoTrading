@@ -1,6 +1,6 @@
 package trendFollowing
 
-// TODO: if no data do nto return 0
+// TODO: if no data do not return 0
 import (
 	"../alphaVantage"
 	"encoding/json"

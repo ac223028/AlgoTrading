@@ -1,5 +1,7 @@
 package main
 
+// TODO: INCOMPLETE
+
 import (
 	"fmt"
 	"github.com/alpacahq/alpaca-trade-api-go/alpaca"
@@ -65,11 +67,11 @@ func getDataPrices(alpacaAPI *alpaca.Client, timeT time.Time) {
 }
 
 func todaysBuyPrices(alpacaAPI *alpaca.Client, timeT time.Time) string {
-
+	return ""
 }
 
 func yesterdaysSellPrices(alpacaAPI *alpaca.Client, timeT time.Time) string {
-
+	return ""
 }
 
 func main() {

@@ -150,14 +150,19 @@ func main() { /////////////////////////////////////////	  MAIN	 ////////////////
 		lastPrice, err := AlpClient.GetLastQuote(asset.Symbol)
 		if err != nil {
 
-			if err.Error() != "resource not found" {
-				missed += 1
-				continue
-			}
+			//if err.Error() != "resource not found" {
+			//	missed += 1
+			//	continue
+			//}
+
+			missed += 1
+			PrettyPrint(asset)
+			PrettyPrint(err.Error())
+
 			continue
 		}
 
-		if lastPrice.Last.AskPrice < float32(max) { // && lastPrice.Last.AskPrice > float32(min) { // nathan
+		if lastPrice.Last.AskPrice <= float32(max) && lastPrice.Last.AskPrice > float32(0) { // && lastPrice.Last.AskPrice > float32(min) { // nathan
 			print(asset.Symbol, " ", lastPrice.Last.AskPrice, "\n")
 			assetsOut.WriteString(asset.Symbol + " " + fmt.Sprintf("%f", lastPrice.Last.AskPrice) + "\n")
 		}
